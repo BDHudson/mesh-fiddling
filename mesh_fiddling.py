@@ -22,18 +22,23 @@ def adjacency(X, Y, tol = 1000.0):
         Yi = Y[i]
 
         for j in range(nc):
-            Xj = X[j]
-            Yj = Y[j]
+            if i != j:
 
-            dist01 = np.sqrt((Xi[0] - Xj[-1])**2 + (Yi[0] - Yj[-1])**2)
-            dist00 = np.sqrt((Xi[0] - Xj[0])**2 + (Yi[0] - Yj[0])**2)
-            dist10 = np.sqrt((Xi[-1] - Xj[0])**2 + (Yi[-1] - Yj[0])**2)
-            dist11 = np.sqrt((Xi[-1] - Xj[-1])**2 + (Yi[-1] - Yj[-1])**2)
+                Xj = X[j]
+                Yj = Y[j]
 
-            if (dist01 < tol or dist00 < tol
-                or dist10 < tol or dist11 < tol):
-                adj[i, j] = 1
-                adj[j, i] = 1
+                dist01 = np.sqrt((Xi[0] - Xj[-1])**2 + (Yi[0] - Yj[-1])**2)
+                dist00 = np.sqrt((Xi[0] - Xj[0])**2 + (Yi[0] - Yj[0])**2)
+                dist10 = np.sqrt((Xi[-1] - Xj[0])**2 + (Yi[-1] - Yj[0])**2)
+                dist11 = np.sqrt((Xi[-1] - Xj[-1])**2 + (Yi[-1] - Yj[-1])**2)
+
+                if dist01 < tol or dist10 < tol:
+                    adj[i, j] = 1
+                    adj[j, i] = 1
+
+                if dist00 < tol or dist11 < tol:
+                    adj[i, j] = -1
+                    adj[j, i] = -1
 
     return adj
 
@@ -41,18 +46,40 @@ def adjacency(X, Y, tol = 1000.0):
 # ----------------------
 def lines_to_pslg(X, Y):
     """
+    Given a list of lines of input points, create a planar straight-line
+    graph (PSLG) such as would be used for input to Triangle or gmsh.
+
     Parameters:
     ==========
     X, Y: list of lists of the coordinates of each line
 
     Returns:
     =======
-    x, y: numpy arrays of coordinates of PSLG points
-    edges: 
-    bndry:
-    xh, yh:
+    x, y:   numpy arrays of coordinates of PSLG points
+    edges:  list of edges of the PSLG
+    bndry:  boundary marker for each edge of the PSLG
+    xh, yh: list of points inside the holes of the PSLG
     """
 
+    num_segments = len(X)
+
     adj = adjacency(X, Y)
+
+    successor = -np.ones(num_segments, dtype = np.int32)
+    undiscovered = set(range(num_segments))
+
+    while undiscovered:
+        i = undiscovered.pop()
+        stack = list(adjacency[i].nonzero())
+
+        while stack:
+            j = stack.pop()
+            successor[i] = j
+
+            i = j
+            for j in adjacency[i].nonzero():
+                if j in undiscovered:
+                    stack.append(j)
+                    undiscovered.remove(j)
 
 
