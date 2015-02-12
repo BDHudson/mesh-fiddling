@@ -1,7 +1,33 @@
-import numpy as np
+from numpy import ones, zeros, sqrt
+
+
+def next_segment(X, Y, i, tol = 1000.0):
+    """
+    Find all segments adjacent to segment `i` in the list-of-lines `X, Y`
+    """
+    num_segments = len(X)
+
+    Xi = X[i]
+    Yi = Y[i]
+
+    for j in range(num_segments):
+        if j != i:
+            Xj = X[j]
+            Yj = Y[j]
+
+            dist = sqrt((Xi[-1] - Xj[0])**2 + (Yi[-1] - Yj[0])**2)
+            if dist < tol:
+                return j
+
+            dist = sqrt((Xi[-1] - Xj[-1])**2 + (Yi[-1] - Yj[-1])**2)
+            if dist < tol:
+                return -j
+
+    return i
+
 
 # --------------------------------
-def adjacency(X, Y, tol = 1000.0):
+def segment_successors(X, Y, tol = 1000.0):
     """
     Parameters:
     ==========
@@ -9,38 +35,31 @@ def adjacency(X, Y, tol = 1000.0):
 
     Returns:
     =======
-    adj: Integer matrix describing the connectivity among the lines;
-         adj[i, j] != 0 if lines i, j are adjacent; = +1 if the orientation
-         of line `i` is preserved, -1 if the orientation is to be reversed.
+
     """
 
-    nc = len(X)
-    adj = np.zeros((nc, nc), dtype = np.int32)
+    num_segments = len(X)
 
-    for i in range(nc):
-        Xi = X[i]
-        Yi = Y[i]
+    # Make copies of the 
+    W = X[:]
+    Z = Y[:]
 
-        for j in range(nc):
-            if i != j:
+    segments = set(range(num_segments))
+    successors = -np.ones(num_segments, dtype = np.int32)
 
-                Xj = X[j]
-                Yj = Y[j]
+    while segments:
+        i0 = segments.pop()
 
-                dist01 = np.sqrt((Xi[0] - Xj[-1])**2 + (Yi[0] - Yj[-1])**2)
-                dist00 = np.sqrt((Xi[0] - Xj[0])**2 + (Yi[0] - Yj[0])**2)
-                dist10 = np.sqrt((Xi[-1] - Xj[0])**2 + (Yi[-1] - Yj[0])**2)
-                dist11 = np.sqrt((Xi[-1] - Xj[-1])**2 + (Yi[-1] - Yj[-1])**2)
+        i = initial_segment
+        j = next_segment(W, Z, i, tol)
+        while j != i0:
+            if j < 0:
+                W[j].reverse()
+                Z[j].reverse()
+            successor[i] = j
 
-                if dist01 < tol or dist10 < tol:
-                    adj[i, j] = 1
-                    adj[j, i] = 1
-
-                if dist00 < tol or dist11 < tol:
-                    adj[i, j] = -1
-                    adj[j, i] = -1
-
-    return adj
+            i = j
+            j = next_segment(W, Z, i, tol)
 
 
 # ----------------------
@@ -60,43 +79,3 @@ def lines_to_pslg(X, Y):
     bndry:  boundary marker for each edge of the PSLG
     xh, yh: list of points inside the holes of the PSLG
     """
-
-    num_segments = len(X)
-
-    adj = adjacency(X, Y)
-
-    successor = -np.ones(num_segments, dtype = np.int32)
-    undiscovered = set(range(num_segments))
-
-    while undiscovered:
-        # Pick a segment that we haven't analyzed yet
-        i0 = undiscovered.pop()
-        i = i0
-
-        # If that segment is connected to any others, depth-first search
-        # through the adjacency graph and assign a successor to each
-        # segment.
-        stack = list(adj[i,:].nonzero()[0])
-        for j in stack:
-            undiscovered.remove(j)
-
-        while stack:
-            j = stack.pop()
-            successor[i] = j
-
-            i = j
-            for j in adj[i,:].nonzero()[0]:
-                if j in undiscovered:
-                    stack.append(j)
-                    undiscovered.remove(j)
-
-        # Close the loop by finding the last segment in the depth-first
-        # search and assigning the initial segment as its successor.
-        i = successor[i0]
-        if i != -1:
-            while successor[i] != -1:
-                i = successor[i]
-            successor[i] = i0
-            
-
-    return successor
