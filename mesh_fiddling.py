@@ -69,7 +69,13 @@ def lines_to_pslg(X, Y):
     undiscovered = set(range(num_segments))
 
     while undiscovered:
-        i = undiscovered.pop()
+        # Pick a segment that we haven't analyzed yet
+        i0 = undiscovered.pop()
+        i = i0
+
+        # If that segment is connected to any others, depth-first search
+        # through the adjacency graph and assign a successor to each
+        # segment.
         stack = list(adj[i,:].nonzero()[0])
         for j in stack:
             undiscovered.remove(j)
@@ -83,5 +89,14 @@ def lines_to_pslg(X, Y):
                 if j in undiscovered:
                     stack.append(j)
                     undiscovered.remove(j)
+
+        # Close the loop by finding the last segment in the depth-first
+        # search and assigning the initial segment as its successor.
+        i = successor[i0]
+        if i != -1:
+            while successor[i] != -1:
+                i = successor[i]
+            successor[i] = i0
+            
 
     return successor
