@@ -70,16 +70,18 @@ def lines_to_pslg(X, Y):
 
     while undiscovered:
         i = undiscovered.pop()
-        stack = list(adjacency[i].nonzero())
+        stack = list(adj[i,:].nonzero()[0])
+        for j in stack:
+            undiscovered.remove(j)
 
         while stack:
             j = stack.pop()
             successor[i] = j
 
             i = j
-            for j in adjacency[i].nonzero():
+            for j in adj[i,:].nonzero()[0]:
                 if j in undiscovered:
                     stack.append(j)
                     undiscovered.remove(j)
 
-
+    return successor
