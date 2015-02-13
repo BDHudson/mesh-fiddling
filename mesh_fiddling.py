@@ -64,6 +64,8 @@ def segment_successors(X, Y, tol = 1000.0):
             i = j
             j = next_segment(W, Z, i, tol)
 
+        successors[i] = i0
+
     return W, Z, successors
 
 
