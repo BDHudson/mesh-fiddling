@@ -35,7 +35,8 @@ def segment_successors(X, Y, tol = 1000.0):
 
     Returns:
     =======
-
+    W, Z:       modified coordinates; some segments may be reversed
+    successors: successors[i] = the next segment after `i`
     """
 
     num_segments = len(X)
@@ -69,20 +70,35 @@ def segment_successors(X, Y, tol = 1000.0):
     return W, Z, successors
 
 
-# ----------------------
-def lines_to_pslg(X, Y):
-    """
-    Given a list of lines of input points, create a planar straight-line
-    graph (PSLG) such as would be used for input to Triangle or gmsh.
+# --------------------------
+def remove_coincident_endpoints(X, Y, seg_tol = 1000.0, node_tol = 200.0):
+    num_segments = len(X)
+    segments = set(range(num_segments))
 
-    Parameters:
-    ==========
-    X, Y: list of lists of the coordinates of each line
+    while segments:
+        i = segments.pop()
+        j = next_segment(X, Y, i, seg_tol)
+        while j in segments:
+            segments.remove(j)
 
-    Returns:
-    =======
-    x, y:   numpy arrays of coordinates of PSLG points
-    edges:  list of edges of the PSLG
-    bndry:  boundary marker for each edge of the PSLG
-    xh, yh: list of points inside the holes of the PSLG
+            dist = sqrt((X[i][-1] - X[j][0])**2 + (Y[i][-1] - Y[j][0])**2)
+            if dist < node_tol:
+                X[i].pop()
+                Y[i].pop()
+                
+            i = j
+            j = next_segment(X, Y, i, seg_tol)
+
+
+# --------------------------
+def write_to_triangle(X, Y, tol = 1000.0)
     """
+    Write out a .poly file
+    """
+    W, Z, s = segment_successors(X, Y)
+    num_segments = len(W)
+
+    remove_coincident_endpoints(W, Z, seg_tol = tol)
+
+    
+    
