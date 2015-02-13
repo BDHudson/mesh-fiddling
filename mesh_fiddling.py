@@ -91,14 +91,27 @@ def remove_coincident_endpoints(X, Y, seg_tol = 1000.0, node_tol = 200.0):
 
 
 # --------------------------
-def write_to_triangle(X, Y, tol = 1000.0)
+def write_to_triangle(filename, X, Y, tol = 1000.0):
     """
     Write out a .poly file
     """
     W, Z, s = segment_successors(X, Y)
+    remove_coincident_endpoints(W, Z, seg_tol = tol)
     num_segments = len(W)
 
-    remove_coincident_endpoints(W, Z, seg_tol = tol)
+    poly_file = open(filename + ".poly", "w")
+    poly_file.write("{0} 2 0 1\n".format(sum([len(w) for w in W])))
 
-    
-    
+    # Write out the PSLG points
+    num_points = 1
+    for k in range(num_segments):
+        w, z = W[k], Z[k]
+
+        for i in range(len(w)):
+            poly_file.write("{0} {1} {2} {3}\n"
+                            .format(num_points + i, w[i], z[i], k))
+
+        num_points += len(w)
+
+    poly_file.close()
+
