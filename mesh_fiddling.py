@@ -26,7 +26,7 @@ def next_segment(X, Y, i, tol = 1000.0):
     return i
 
 
-# --------------------------------
+# -----------------------------------------
 def segment_successors(X, Y, tol = 1000.0):
     """
     Parameters:
@@ -40,26 +40,31 @@ def segment_successors(X, Y, tol = 1000.0):
 
     num_segments = len(X)
 
-    # Make copies of the 
+    # Make copies of the input arrays; we'll be modifying them
     W = X[:]
     Z = Y[:]
 
     segments = set(range(num_segments))
-    successors = -np.ones(num_segments, dtype = np.int32)
+    successors = range(num_segments)
 
     while segments:
         i0 = segments.pop()
 
-        i = initial_segment
+        i = i0
         j = next_segment(W, Z, i, tol)
         while j != i0:
             if j < 0:
+                j = -j
                 W[j].reverse()
                 Z[j].reverse()
-            successor[i] = j
+
+            segments.remove(j)
+            successors[i] = j
 
             i = j
             j = next_segment(W, Z, i, tol)
+
+    return W, Z, successors
 
 
 # ----------------------
