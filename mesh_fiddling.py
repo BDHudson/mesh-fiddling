@@ -1,4 +1,6 @@
 from numpy import ones, zeros, sqrt
+from matplotlib.path import *
+from itertools import combinations
 
 
 def next_segment(X, Y, i, tol = 1000.0):
@@ -89,6 +91,73 @@ def remove_coincident_endpoints(X, Y, seg_tol = 1000.0, node_tol = 200.0):
             i = j
             j = next_segment(X, Y, i, seg_tol)
 
+    return
+
+
+# -----------------------------------
+def lines_to_paths(X, Y, successors):
+    num_segments = len(X)
+    segments = set(range(num_segments))
+    ps = []
+
+    while segments:
+        i0 = segments.pop()
+        i = i0
+
+        arr = zip(X[i], Y[i])
+        
+        j = next_segment(X, Y, i)
+        while j != i0:
+            segments.remove(j)
+            arr.extend(zip(X[j], Y[j]))
+            
+            i = j
+            j = next_segment(X, Y, i)
+
+        p = Path(arr, closed = True)
+        ps.append(p)
+
+    return ps
+
+
+# -----------------------
+def point_inside_path(p):
+    """
+    Return a somewhat arbitrary point inside the path p.
+    Triangle needs to have a point contained in any holes in the mesh.
+    """
+
+    x = 0.0
+    y = 0.0
+
+    i = 0
+    j = len(p)/2
+    # This is sloppy, don't care
+    while not p.contains_point((x, y)):
+        j += 1
+        x = 0.5 * (p.vertices[i, 0] + p.vertices[j, 0])
+        y = 0.5 * (p.vertices[i, 1] + p.vertices[j, 1])
+
+    return x, y
+
+
+# -----------------------------------
+def identify_holes(X, Y, successors):
+    """
+    Find which segments of the PSLG are the outlines of holes in the mesh
+    """
+    xh = []
+    yh = []
+
+    ps = lines_to_paths(X, Y, successors)
+    for p, q in combinations(ps, 2):
+        if p.contains_path(q):
+            w, z = point_inside_path(q)
+            xh.append(w)
+            yh.append(z)
+
+    return xh, yh
+
 
 # --------------------------
 def write_to_triangle(filename, X, Y, tol = 1000.0):
@@ -98,7 +167,7 @@ def write_to_triangle(filename, X, Y, tol = 1000.0):
     W, Z, successors = segment_successors(X, Y)
 
     # Maybe should not do this
-    remove_coincident_endpoints(W, Z, seg_tol = tol)
+    #remove_coincident_endpoints(W, Z, seg_tol = tol)
 
     num_segments = len(W)
     num_points = sum([len(w) for w in W])
@@ -150,8 +219,11 @@ def write_to_triangle(filename, X, Y, tol = 1000.0):
 
         counter += len(w)
 
-
     # Write out the PSLG holes
-    poly_file.write("0\n")
+    xh, yh = identify_holes(W, Z, successors)
+    num_holes = len(xh)
+    poly_file.write("{0}\n".format(num_holes))
+    for i in range(num_holes):
+        poly_file.write("{0} {1} {2}\n".format(i + 1, xh[i], yh[i]))
 
     poly_file.close()
