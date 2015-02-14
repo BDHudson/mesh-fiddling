@@ -85,7 +85,7 @@ def remove_coincident_endpoints(X, Y, seg_tol = 1000.0, node_tol = 200.0):
             if dist < node_tol:
                 X[i].pop()
                 Y[i].pop()
-                
+
             i = j
             j = next_segment(X, Y, i, seg_tol)
 
@@ -95,23 +95,63 @@ def write_to_triangle(filename, X, Y, tol = 1000.0):
     """
     Write out a .poly file
     """
-    W, Z, s = segment_successors(X, Y)
+    W, Z, successors = segment_successors(X, Y)
+
+    # Maybe should not do this
     remove_coincident_endpoints(W, Z, seg_tol = tol)
+
     num_segments = len(W)
+    num_points = sum([len(w) for w in W])
 
     poly_file = open(filename + ".poly", "w")
-    poly_file.write("{0} 2 0 1\n".format(sum([len(w) for w in W])))
+    poly_file.write("{0} 2 0 1\n".format(num_points))
 
     # Write out the PSLG points
-    num_points = 1
+    counter = 1
     for k in range(num_segments):
         w, z = W[k], Z[k]
 
         for i in range(len(w)):
             poly_file.write("{0} {1} {2} {3}\n"
-                            .format(num_points + i, w[i], z[i], k))
+                            .format(counter + i, w[i], z[i], k))
 
-        num_points += len(w)
+        counter += len(w)
+
+
+    # Write out the PSLG edges
+    poly_file.write("{0} 1\n".format(num_points))
+
+    offsets = zeros(num_segments + 1, dtype = int)
+    offsets[0] = 1
+    for k in range(num_segments):
+        offsets[k + 1] = offsets[k] + len(W[k])
+
+    counter = 1
+    for k in range(num_segments):
+        w, z = W[k], Z[k]
+
+        # Write out all the edges within this segment
+        for i in range(len(w) - 1):
+            poly_file.write("{0} {1} {2} {3}\n"
+                            .format(counter + i,
+                                    offsets[k] + i,
+                                    offsets[k] + i + 1,
+                                    k + 1))
+
+        # Write out the edge connecting this segment to the next.
+        # Note that if this segment is its own successor, this just
+        # connects the tail back to the head.
+        l = successors[k]
+        poly_file.write("{0} {1} {2} {3}\n"
+                        .format(counter + len(w) - 1,
+                                offsets[k] + len(w) - 1,
+                                offsets[l],
+                                k + 1))
+
+        counter += len(w)
+
+
+    # Write out the PSLG holes
+    poly_file.write("0\n")
 
     poly_file.close()
-
