@@ -72,28 +72,6 @@ def segment_successors(X, Y, tol = 1000.0):
     return W, Z, successors
 
 
-# --------------------------
-def remove_coincident_endpoints(X, Y, seg_tol = 1000.0, node_tol = 200.0):
-    num_segments = len(X)
-    segments = set(range(num_segments))
-
-    while segments:
-        i = segments.pop()
-        j = next_segment(X, Y, i, seg_tol)
-        while j in segments:
-            segments.remove(j)
-
-            dist = sqrt((X[i][-1] - X[j][0])**2 + (Y[i][-1] - Y[j][0])**2)
-            if dist < node_tol:
-                X[i].pop()
-                Y[i].pop()
-
-            i = j
-            j = next_segment(X, Y, i, seg_tol)
-
-    return
-
-
 # -----------------------------------
 def lines_to_paths(X, Y, successors):
     num_segments = len(X)
@@ -165,9 +143,6 @@ def write_to_triangle(filename, X, Y, tol = 1000.0):
     Write out a .poly file
     """
     W, Z, successors = segment_successors(X, Y)
-
-    # Maybe should not do this
-    #remove_coincident_endpoints(W, Z, seg_tol = tol)
 
     num_segments = len(W)
     num_points = sum([len(w) for w in W])
