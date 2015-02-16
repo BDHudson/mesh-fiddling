@@ -83,12 +83,12 @@ def lines_to_paths(X, Y, successors):
         i = i0
 
         arr = zip(X[i], Y[i])
-        
+
         j = next_segment(X, Y, i)
         while j != i0:
             segments.remove(j)
             arr.extend(zip(X[j], Y[j]))
-            
+
             i = j
             j = next_segment(X, Y, i)
 
@@ -147,7 +147,7 @@ def write_to_triangle(filename, X, Y, tol = 1000.0):
     num_segments = len(W)
     num_points = sum([len(w) for w in W])
 
-    poly_file = open(filename + ".poly", "w")
+    poly_file = open(filename, "w")
     poly_file.write("{0} 2 0 1\n".format(num_points))
 
     # Write out the PSLG points
@@ -214,7 +214,7 @@ def write_to_geo(filename, X, Y, tol = 1000.0):
     num_segments = len(W)
     num_points = sum([len(w) for w in W])
 
-    geo_file = open(filename + ".geo", "w")
+    geo_file = open(filename, "w")
 
     # Write out the PSLG points
     counter = 1
