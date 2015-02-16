@@ -202,3 +202,52 @@ def write_to_triangle(filename, X, Y, tol = 1000.0):
         poly_file.write("{0} {1} {2}\n".format(i + 1, xh[i], yh[i]))
 
     poly_file.close()
+
+
+# ------------------------------------
+def write_to_geo(filename, X, Y, tol = 1000.0):
+    """
+    Write out the PSLG to the gmsh .geo format
+    """
+    W, Z, successors = segment_successors(X, Y)
+
+    num_segments = len(W)
+    num_points = sum([len(w) for w in W])
+
+    geo_file = open(filename + ".geo", "w")
+
+    # Write out the PSLG points
+    counter = 1
+    for k in range(num_segments):
+        w, z = W[k], Z[k]
+
+        for i in range(len(w)):
+            geo_file.write("Point({0}) = {{{1}, {2}}};\n"
+                           .format(counter + i, w[i], z[i]))
+
+        counter += len(w)
+
+
+    # Write out the PSLG edges
+    offsets = zeros(num_segments + 1, dtype = int)
+    offsets[0] = 1
+    for k in range(num_segments):
+        offsets[k + 1] = offsets[k] + len(W[k])
+
+    counter = 1
+    for k in range(num_segments):
+        w, z = W[k], Z[k]
+
+        for i in range(len(w) - 1):
+            geo_file.write("Line({0}) = {{{1}, {2}}};\n"
+                           .format(counter + i,
+                                   offsets[k] + i,
+                                   offsets[k] + i + 1))
+
+        l = successors[k]
+        poly_file.write("Line({0}) = {{{1}, {2}}};\n"
+                        .format(counter + len(w) - 1,
+                                offsets[k] + len(w) - 1,
+                                offsets[l]))
+
+        counter += len(w)
