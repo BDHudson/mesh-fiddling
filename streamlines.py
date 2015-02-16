@@ -1,5 +1,6 @@
 import numpy as np
 from shapefile import *
+from geodat import read_geodat
 
 # -------------------------------
 def interpolate(x, y, x0, y0, q):
@@ -197,9 +198,6 @@ def make_streamlines(velocity_filename,
                 vy[i, j] = 0.0
 
     lines = streamlines_from_shapefile(x, y, vx, vy,
-                                      initial_shapefile, sign)
+                                       initial_shapefile, inflow)
 
     write_streamlines(lines, streamlines_shapefile)
-
-
-
