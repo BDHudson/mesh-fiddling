@@ -4,6 +4,8 @@ import struct
 import sys
 import math
 
+from idw import fill_missing_data
+
 
 def read_geodat(filename):
     """
@@ -61,49 +63,17 @@ def read_geodat(filename):
     raw_data = data_file.read()
     data_file.close()
 
-    # Unpack that binary data to an array of floats, knowing that it is
-    # in big-endian format. Why? God only knows.
+    # Unpack the binary data to an array of floats, knowing that it is
+    # in big-endian format.
     nvals = len(raw_data)/4
     arr = np.zeros(nvals)
     for i in range(nvals):
         arr[i] = struct.unpack('>f', raw_data[4*i: 4*(i+1)])[0]
 
-    # Fairly certain that this is right, but plot it and compare against
-    # matlab to be certain
+    # Reshape the 1D array to 2D
     data = arr.reshape((ny, nx))
 
-    # Find weird points.
-    if np.min(data) == -2.0e+9:
-        for i in range(1, ny - 1):
-            for j in range(1, nx - 1):
-                # A point with no data but which has four cardinal neighbors
-                # that does can rasonably have data interpolated from them
-                if data[i, j] == -2e+9:
-                    nbrs = [ [i+1, i-1, i,   i  ],
-                             [j,   j,   j+1, j-1] ]
-                    k = sum( data[nbrs[0], nbrs[1]] != -2e+9 )
-                    if k == 4:
-                        data[i,j] = sum( data[nbrs[0],nbrs[1]] )/4.0
-
-                # A point which does have data but for which only one of its
-                # neighbors neighbors does should not have data
-                else:
-                    nbrs = [ [i+1, i+1, i+1, i,   i,   i-1, i-1, i-1],
-                             [j+1, j,   j-1, j+1, j-1, j+1, j,   j-1] ]
-                    k = sum( data[nbrs[0],nbrs[1]]!=-2e+9 )
-                    if k <= 1:
-                        data[i,j] = -2e+9
-                        data[i,j] = -2e+9
-
-        for i in range(1, ny - 1):
-            for j in range(1, nx - 1):
-                if data[i,j] != -2e+9:
-                    nbrs = [ [i+1, i+1, i+1, i,   i,   i-1, i-1, i-1],
-                             [j+1, j,   j-1, j+1, j-1, j+1, j,   j-1] ]
-                    k = sum( data[nbrs[0], nbrs[1]] != -2e+9 )
-                    if k < 4:
-                        data[i,j] = -2e+9
-                        data[i,j] = -2e+9
+    # Fill in any small patches of missing data
+    data = fill_missing_data(data, -2.0e+9)
 
     return x, y, data
-
