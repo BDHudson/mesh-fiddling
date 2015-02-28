@@ -14,12 +14,14 @@ def read_shapefile(filename):
         y = []
 
         num_pts = len(shape.points)
-        for i in range(num_pts):
-            x.append(shape.points[i][0])
-            y.append(shape.points[i][1])
 
-        X.append(x)
-        Y.append(y)
+        if num_pts > 0:
+            for i in range(num_pts):
+                x.append(shape.points[i][0])
+                y.append(shape.points[i][1])
+
+            X.append(x)
+            Y.append(y)
 
     return X, Y
 
@@ -35,5 +37,3 @@ def read_shapefiles(filenames):
         Y.extend(y)
 
     return X, Y
-
-
