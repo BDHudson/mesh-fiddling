@@ -216,13 +216,15 @@ def write_to_geo(filename, X, Y, tol = 1000.0):
 
     geo_file = open(filename, "w")
 
+    geo_file.write("cl = 1.0e+22;\n")
+
     # Write out the PSLG points
     counter = 1
     for k in range(num_segments):
         w, z = W[k], Z[k]
 
         for i in range(len(w)):
-            geo_file.write("Point({0}) = {{{1}, {2}}};\n"
+            geo_file.write("Point({0}) = {{{1}, {2}, 0.0, cl}};\n"
                            .format(counter + i, w[i], z[i]))
 
         counter += len(w)
@@ -245,9 +247,10 @@ def write_to_geo(filename, X, Y, tol = 1000.0):
                                    offsets[k] + i + 1))
 
         l = successors[k]
-        poly_file.write("Line({0}) = {{{1}, {2}}};\n"
-                        .format(counter + len(w) - 1,
-                                offsets[k] + len(w) - 1,
-                                offsets[l]))
+        geo_file.write("Line({0}) = {{{1}, {2}}};\n"
+                       .format(counter + len(w) - 1,
+                               offsets[k] + len(w) - 1,
+                               offsets[l]))
 
         counter += len(w)
+
